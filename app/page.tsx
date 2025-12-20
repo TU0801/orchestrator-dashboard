@@ -282,23 +282,65 @@ export default function Dashboard() {
         <h1 style={{ margin: 0, fontSize: '24px', color: '#333' }}>
           Orchestrator Dashboard
         </h1>
-        <button
-          onClick={() => fetchStatus()}
-          disabled={loading}
-          style={{
-            padding: '10px 20px',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            background: loading ? '#ccc' : '#0070f3',
-            color: 'white',
-            border: 'none',
-            borderRadius: '5px',
-            fontSize: '14px',
-            fontWeight: '500',
-            minHeight: '44px'
-          }}
-        >
-          {loading ? 'Loading...' : 'Refresh'}
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            onClick={() => {
+              const params = new URLSearchParams(window.location.search)
+              const key = params.get('key')
+              window.location.href = key ? `/analytics?key=${key}` : '/analytics'
+            }}
+            style={{
+              padding: '10px 20px',
+              cursor: 'pointer',
+              background: '#fff',
+              color: '#0070f3',
+              border: '1px solid #0070f3',
+              borderRadius: '5px',
+              fontSize: '14px',
+              fontWeight: '500',
+              minHeight: '44px'
+            }}
+          >
+            📊 Analytics
+          </button>
+          <button
+            onClick={() => {
+              const params = new URLSearchParams(window.location.search)
+              const key = params.get('key')
+              window.location.href = key ? `/improvements?key=${key}` : '/improvements'
+            }}
+            style={{
+              padding: '10px 20px',
+              cursor: 'pointer',
+              background: '#fff',
+              color: '#0070f3',
+              border: '1px solid #0070f3',
+              borderRadius: '5px',
+              fontSize: '14px',
+              fontWeight: '500',
+              minHeight: '44px'
+            }}
+          >
+            🔧 Improvements
+          </button>
+          <button
+            onClick={() => fetchStatus()}
+            disabled={loading}
+            style={{
+              padding: '10px 20px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              background: loading ? '#ccc' : '#0070f3',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              fontSize: '14px',
+              fontWeight: '500',
+              minHeight: '44px'
+            }}
+          >
+            {loading ? 'Loading...' : 'Refresh'}
+          </button>
+        </div>
       </div>
 
       {error && (
