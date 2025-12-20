@@ -65,6 +65,12 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // 指示投入フォーム用のstate
+  const [selectedProject, setSelectedProject] = useState<string>('')
+  const [instruction, setInstruction] = useState<string>('')
+  const [submitting, setSubmitting] = useState(false)
+  const [submitMessage, setSubmitMessage] = useState<string | null>(null)
+
   const fetchStatus = async () => {
     try {
       setLoading(true)
@@ -92,12 +98,62 @@ export default function Dashboard() {
     return () => clearInterval(interval)
   }, [])
 
+  // プロジェクトが読み込まれたらデフォルトを選択
+  useEffect(() => {
+    if (status?.projects && status.projects.length > 0 && !selectedProject) {
+      setSelectedProject(status.projects[0].id)
+    }
+  }, [status?.projects, selectedProject])
+
+  const submitInstruction = async () => {
+    if (!selectedProject || !instruction.trim()) {
+      setSubmitMessage('プロジェクトと指示を入力してください')
+      return
+    }
+
+    try {
+      setSubmitting(true)
+      setSubmitMessage(null)
+
+      const response = await fetch('/api/instructions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: selectedProject,
+          instruction: instruction.trim()
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setSubmitMessage(`エラー: ${data.error}`)
+        return
+      }
+
+      setSubmitMessage('✅ 指示を送信しました')
+      setInstruction('')
+
+      // ステータスを再取得してタスクリストを更新
+      fetchStatus()
+    } catch (err) {
+      setSubmitMessage('送信に失敗しました')
+      console.error(err)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const insertTemplate = (template: string) => {
+    setInstruction(template)
+  }
+
   const cardStyle = {
     background: 'white',
     border: '1px solid #e0e0e0',
     borderRadius: '8px',
-    padding: '20px',
-    marginBottom: '20px',
+    padding: '16px',
+    marginBottom: '16px',
     boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
   }
 
@@ -111,7 +167,7 @@ export default function Dashboard() {
   return (
     <div style={{
       fontFamily: 'system-ui, sans-serif',
-      padding: '20px',
+      padding: '12px',
       maxWidth: '1400px',
       margin: '0 auto',
       background: '#f5f5f5',
@@ -119,14 +175,16 @@ export default function Dashboard() {
     }}>
       <div style={{
         background: 'white',
-        padding: '20px',
+        padding: '16px',
         borderRadius: '8px',
-        marginBottom: '20px',
+        marginBottom: '16px',
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '12px'
       }}>
-        <h1 style={{ margin: 0, fontSize: '28px', color: '#333' }}>
+        <h1 style={{ margin: 0, fontSize: '24px', color: '#333' }}>
           Orchestrator Dashboard
         </h1>
         <button
@@ -140,7 +198,8 @@ export default function Dashboard() {
             border: 'none',
             borderRadius: '5px',
             fontSize: '14px',
-            fontWeight: '500'
+            fontWeight: '500',
+            minHeight: '44px'
           }}
         >
           {loading ? 'Loading...' : 'Refresh'}
@@ -162,6 +221,115 @@ export default function Dashboard() {
 
       {status && !loading && (
         <>
+          {/* Instruction Input Form */}
+          <div style={cardStyle}>
+            <h2 style={titleStyle}>📝 指示を送る</h2>
+
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px' }}>
+                プロジェクト
+              </label>
+              <select
+                value={selectedProject}
+                onChange={(e) => setSelectedProject(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  fontSize: '16px',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '6px',
+                  background: 'white',
+                  minHeight: '44px'
+                }}
+              >
+                {status.projects.map(project => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px' }}>
+                指示
+              </label>
+              <textarea
+                value={instruction}
+                onChange={(e) => setInstruction(e.target.value)}
+                placeholder="例: 検索フィルタを改善して"
+                style={{
+                  width: '100%',
+                  minHeight: '100px',
+                  padding: '12px',
+                  fontSize: '16px',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '6px',
+                  resize: 'vertical',
+                  fontFamily: 'system-ui, sans-serif'
+                }}
+              />
+            </div>
+
+            {/* テンプレート */}
+            <div style={{ marginBottom: '15px' }}>
+              <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>よく使う指示:</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {['続きをやって', '状態を確認して', 'エラーを修正して', 'テストを実行して'].map(template => (
+                  <button
+                    key={template}
+                    onClick={() => insertTemplate(template)}
+                    style={{
+                      padding: '10px 16px',
+                      fontSize: '14px',
+                      background: '#f5f5f5',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      color: '#666',
+                      minHeight: '44px'
+                    }}
+                  >
+                    {template}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={submitInstruction}
+              disabled={submitting || !instruction.trim()}
+              style={{
+                width: '100%',
+                padding: '14px',
+                fontSize: '16px',
+                fontWeight: '600',
+                background: submitting || !instruction.trim() ? '#ccc' : '#0070f3',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: submitting || !instruction.trim() ? 'not-allowed' : 'pointer',
+                minHeight: '48px'
+              }}
+            >
+              {submitting ? '送信中...' : '送信'}
+            </button>
+
+            {submitMessage && (
+              <div style={{
+                marginTop: '12px',
+                padding: '10px',
+                background: submitMessage.includes('✅') ? '#d4edda' : '#fee',
+                border: `1px solid ${submitMessage.includes('✅') ? '#c3e6cb' : '#fcc'}`,
+                borderRadius: '6px',
+                color: submitMessage.includes('✅') ? '#155724' : '#c00',
+                fontSize: '14px'
+              }}>
+                {submitMessage}
+              </div>
+            )}
+          </div>
+
           {/* User Profile */}
           {status.user_profile && (
             <div style={cardStyle}>
