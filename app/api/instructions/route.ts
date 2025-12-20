@@ -1,10 +1,16 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
 // POST /api/instructions - 指示を投入
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  // 認証チェック
+  const authError = requireAuth(request)
+  if (authError) {
+    return authError
+  }
   try {
     const body = await request.json()
     const { project_id, instruction } = body
@@ -50,7 +56,12 @@ export async function POST(request: Request) {
 }
 
 // GET /api/instructions - pending/in_progressタスクを取得
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // 認証チェック
+  const authError = requireAuth(request)
+  if (authError) {
+    return authError
+  }
   try {
     const { data, error } = await supabase
       .from('orch_tasks')

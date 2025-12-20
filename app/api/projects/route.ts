@@ -1,9 +1,15 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // 認証チェック
+  const authError = requireAuth(request)
+  if (authError) {
+    return authError
+  }
   try {
     const { data, error } = await supabase
       .from('orch_projects')
