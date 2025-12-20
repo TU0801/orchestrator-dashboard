@@ -73,8 +73,8 @@ export default function Dashboard() {
   const [submitting, setSubmitting] = useState(false)
   const [submitMessage, setSubmitMessage] = useState<string | null>(null)
 
-  const fetchStatus = async () => {
-    setLoading(true)
+  const fetchStatus = async (silent = false) => {
+    if (!silent) setLoading(true)
     try {
       // URLパラメータからAPIキーを取得
       const params = new URLSearchParams(window.location.search)
@@ -83,22 +83,27 @@ export default function Dashboard() {
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.error || 'Failed to fetch status')
+        if (!silent) setError(data.error || 'Failed to fetch status')
         return
       }
 
       setStatus(data)
       setError(null)
     } catch (err) {
-      setError('Failed to connect to API')
-      console.error(err)
+      if (!silent) {
+        setError('Failed to connect to API')
+        console.error(err)
+      }
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }
 
   useEffect(() => {
     fetchStatus()
+    // 15秒ごとにタスク一覧を自動更新（サイレントモード）
+    const interval = setInterval(() => fetchStatus(true), 15000)
+    return () => clearInterval(interval)
   }, [])
 
   // プロジェクトが読み込まれたらデフォルトを選択
@@ -141,8 +146,8 @@ export default function Dashboard() {
       setSubmitMessage('✅ 指示を送信しました')
       setInstruction('')
 
-      // ステータスを再取得してタスクリストを更新
-      fetchStatus()
+      // ステータスを再取得してタスクリストを更新（サイレントモード）
+      fetchStatus(true)
     } catch (err) {
       setSubmitMessage('送信に失敗しました')
       console.error(err)
