@@ -67,7 +67,10 @@ export default function ProjectDetailPage() {
   const fetchProjectDetail = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/projects/${projectId}`)
+      // URLパラメータからAPIキーを取得
+      const params = new URLSearchParams(window.location.search)
+      const key = params.get('key') || ''
+      const response = await fetch(`/api/projects/${projectId}?key=${key}`)
       const result = await response.json()
 
       if (!response.ok) {
@@ -97,7 +100,11 @@ export default function ProjectDetailPage() {
     return (
       <div style={{ padding: '20px' }}>
         <p style={{ color: 'red' }}>Error: {error || 'Project not found'}</p>
-        <button onClick={() => router.push('/')} style={{ marginTop: '10px', padding: '8px 16px' }}>
+        <button onClick={() => {
+          const params = new URLSearchParams(window.location.search)
+          const key = params.get('key')
+          router.push(key ? `/?key=${key}` : '/')
+        }} style={{ marginTop: '10px', padding: '8px 16px' }}>
           ← Back to Dashboard
         </button>
       </div>
@@ -149,7 +156,11 @@ export default function ProjectDetailPage() {
       }}>
         <div>
           <button
-            onClick={() => router.push('/')}
+            onClick={() => {
+              const params = new URLSearchParams(window.location.search)
+              const key = params.get('key')
+              router.push(key ? `/?key=${key}` : '/')
+            }}
             style={{
               padding: '8px 12px',
               background: '#f5f5f5',

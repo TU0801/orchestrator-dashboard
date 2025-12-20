@@ -99,8 +99,6 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchStatus()
-    const interval = setInterval(fetchStatus, 15000)
-    return () => clearInterval(interval)
   }, [])
 
   // プロジェクトが読み込まれたらデフォルトを選択
@@ -120,7 +118,11 @@ export default function Dashboard() {
       setSubmitting(true)
       setSubmitMessage(null)
 
-      const response = await fetch('/api/instructions', {
+      // URLパラメータからAPIキーを取得
+      const params = new URLSearchParams(window.location.search)
+      const key = params.get('key') || ''
+
+      const response = await fetch(`/api/instructions?key=${key}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -376,7 +378,11 @@ export default function Dashboard() {
                     cursor: 'pointer',
                     transition: 'all 0.2s'
                   }}
-                  onClick={() => window.location.href = `/projects/${project.id}`}
+                  onClick={() => {
+                    const params = new URLSearchParams(window.location.search)
+                    const key = params.get('key')
+                    window.location.href = key ? `/projects/${project.id}?key=${key}` : `/projects/${project.id}`
+                  }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)'
                     e.currentTarget.style.transform = 'translateY(-2px)'
