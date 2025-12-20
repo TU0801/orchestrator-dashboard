@@ -74,9 +74,12 @@ export default function Dashboard() {
   const [submitMessage, setSubmitMessage] = useState<string | null>(null)
 
   const fetchStatus = async () => {
+    setLoading(true)
     try {
-      setLoading(true)
-      const response = await fetch('/api/status')
+      // URLパラメータからAPIキーを取得
+      const params = new URLSearchParams(window.location.search)
+      const key = params.get('key') || ''
+      const response = await fetch(`/api/status?key=${key}`)
       const data = await response.json()
 
       if (!response.ok) {
