@@ -96,7 +96,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchStatus()
-    const interval = setInterval(fetchStatus, 30000)
+    const interval = setInterval(fetchStatus, 15000)
     return () => clearInterval(interval)
   }, [])
 
