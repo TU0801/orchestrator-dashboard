@@ -48,6 +48,8 @@ interface Task {
   status: string
   priority: string
   created_at: string
+  completed_at?: string
+  completion_note?: string
 }
 
 interface StatusResponse {
@@ -367,9 +369,20 @@ export default function Dashboard() {
                     border: '1px solid #e0e0e0',
                     borderRadius: '6px',
                     padding: '15px',
-                    background: '#fafafa'
+                    background: '#fafafa',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                  onClick={() => window.location.href = `/projects/${project.id}`}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)'
+                    e.currentTarget.style.transform = 'translateY(-2px)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.boxShadow = 'none'
+                    e.currentTarget.style.transform = 'translateY(0)'
                   }}>
-                    <h3 style={{ margin: '0 0 10px 0', fontSize: '16px' }}>{project.name}</h3>
+                    <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#0070f3' }}>{project.name}</h3>
                     <p style={{ fontSize: '13px', color: '#666', marginBottom: '10px' }}>{project.description}</p>
                     <div style={{ fontSize: '12px', color: '#888' }}>
                       <div><strong>誰のため:</strong> {project.for_whom}</div>
@@ -424,39 +437,64 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Active Tasks */}
+          {/* All Tasks - with filter */}
           {status.active_tasks.length > 0 && (
             <div style={cardStyle}>
-              <h2 style={titleStyle}>✅ Active Tasks ({status.active_tasks.length})</h2>
+              <h2 style={titleStyle}>✅ タスク一覧 ({status.active_tasks.length})</h2>
               <div style={{ display: 'grid', gap: '10px' }}>
                 {status.active_tasks.map(task => (
                   <div key={task.id} style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
                     padding: '12px',
                     background: '#fafafa',
                     borderRadius: '6px',
                     border: '1px solid #e0e0e0'
                   }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '14px', fontWeight: '500', marginBottom: '4px' }}>
-                        {task.title}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '8px', gap: '10px' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '14px', fontWeight: '500', marginBottom: '4px' }}>
+                          #{task.id}: {task.title}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#888' }}>
+                          {task.project_id} • {task.priority}
+                          {task.created_at && ` • Created: ${new Date(task.created_at).toLocaleString()}`}
+                          {task.completed_at && ` • Completed: ${new Date(task.completed_at).toLocaleString()}`}
+                        </div>
                       </div>
-                      <div style={{ fontSize: '12px', color: '#888' }}>
-                        {task.project_id} • {task.priority}
+                      <div style={{
+                        padding: '4px 12px',
+                        background:
+                          task.status === 'done' ? '#d4edda' :
+                          task.status === 'failed' ? '#f8d7da' :
+                          task.status === 'in_progress' ? '#fff3cd' : '#e7f3ff',
+                        color:
+                          task.status === 'done' ? '#155724' :
+                          task.status === 'failed' ? '#721c24' :
+                          task.status === 'in_progress' ? '#856404' : '#004085',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {task.status}
                       </div>
                     </div>
-                    <div style={{
-                      padding: '4px 12px',
-                      background: task.status === 'in_progress' ? '#fff3cd' : '#e7f3ff',
-                      color: task.status === 'in_progress' ? '#856404' : '#004085',
-                      borderRadius: '4px',
-                      fontSize: '12px',
-                      fontWeight: '500'
-                    }}>
-                      {task.status}
-                    </div>
+
+                    {task.completion_note && (
+                      <div style={{
+                        marginTop: '8px',
+                        padding: '8px',
+                        background: 'white',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        color: '#666',
+                        whiteSpace: 'pre-wrap',
+                        maxHeight: '100px',
+                        overflow: 'auto'
+                      }}>
+                        {task.completion_note.substring(0, 200)}
+                        {task.completion_note.length > 200 && '...'}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

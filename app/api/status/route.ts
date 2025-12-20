@@ -67,13 +67,12 @@ export async function GET() {
       }
     }
 
-    // 6. Active Tasks (status != 'completed')
+    // 6. All Recent Tasks (including completed, ordered by most recent)
     const { data: activeTasks, error: tasksError } = await supabase
       .from('orch_tasks')
       .select('*')
-      .neq('status', 'completed')
       .order('created_at', { ascending: false })
-      .limit(20)
+      .limit(50)
 
     if (tasksError) {
       console.error('Tasks error:', tasksError)
