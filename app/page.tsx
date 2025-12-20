@@ -282,7 +282,27 @@ export default function Dashboard() {
         <h1 style={{ margin: 0, fontSize: '24px', color: '#333' }}>
           Orchestrator Dashboard
         </h1>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => {
+              const params = new URLSearchParams(window.location.search)
+              const key = params.get('key')
+              window.location.href = key ? `/add-project?key=${key}` : '/add-project'
+            }}
+            style={{
+              padding: '10px 20px',
+              cursor: 'pointer',
+              background: '#28a745',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              fontSize: '14px',
+              fontWeight: '500',
+              minHeight: '44px'
+            }}
+          >
+            ➕ Add Project
+          </button>
           <button
             onClick={() => {
               const params = new URLSearchParams(window.location.search)
@@ -322,6 +342,26 @@ export default function Dashboard() {
             }}
           >
             🔧 Improvements
+          </button>
+          <button
+            onClick={() => {
+              const params = new URLSearchParams(window.location.search)
+              const key = params.get('key')
+              window.location.href = key ? `/settings?key=${key}` : '/settings'
+            }}
+            style={{
+              padding: '10px 20px',
+              cursor: 'pointer',
+              background: '#fff',
+              color: '#666',
+              border: '1px solid #e0e0e0',
+              borderRadius: '5px',
+              fontSize: '14px',
+              fontWeight: '500',
+              minHeight: '44px'
+            }}
+          >
+            ⚙️ Settings
           </button>
           <button
             onClick={() => fetchStatus()}
