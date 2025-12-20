@@ -72,6 +72,15 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // 5.5 Project Summaries (各プロジェクトのサマリー)
+    const { data: projectSummaries, error: summariesError } = await supabase
+      .from('orch_project_summaries')
+      .select('*')
+
+    if (summariesError) {
+      console.error('Project summaries error:', summariesError)
+    }
+
     // 6. All Recent Tasks (including completed, ordered by most recent)
     const { data: activeTasks, error: tasksError } = await supabase
       .from('orch_tasks')
@@ -91,6 +100,7 @@ export async function GET(request: NextRequest) {
       recent_adrs: recentAdrs || [],
       recent_conversations: recentConversations || [],
       project_states: projectStates || [],
+      project_summaries: projectSummaries || [],
       active_tasks: activeTasks || []
     })
   } catch (error) {

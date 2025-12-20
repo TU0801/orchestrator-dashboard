@@ -64,12 +64,22 @@ interface Suggestion {
   created_by: string
 }
 
+interface ProjectSummary {
+  id: number
+  project_id: string
+  current_status: string
+  next_milestone: string
+  recent_progress: string
+  updated_at: string
+}
+
 interface StatusResponse {
   timestamp: string
   user_profile: UserProfile | null
   projects: Project[]
   recent_adrs: ADR[]
   project_states: ProjectState[]
+  project_summaries: ProjectSummary[]
   active_tasks: Task[]
   error?: string
 }
@@ -574,6 +584,7 @@ export default function Dashboard() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '15px' }}>
               {status.projects.map(project => {
                 const state = status.project_states.find(s => s.project_id === project.id)
+                const summary = status.project_summaries.find(s => s.project_id === project.id)
                 return (
                   <div key={project.id} style={{
                     border: '1px solid #e0e0e0',
@@ -597,6 +608,35 @@ export default function Dashboard() {
                     e.currentTarget.style.transform = 'translateY(0)'
                   }}>
                     <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#0070f3' }}>{project.name}</h3>
+
+                    {/* プロジェクトサマリー */}
+                    {summary && (
+                      <div style={{
+                        background: '#e7f3ff',
+                        border: '1px solid #0070f3',
+                        borderRadius: '4px',
+                        padding: '10px',
+                        marginBottom: '10px',
+                        fontSize: '13px'
+                      }}>
+                        {summary.current_status && (
+                          <div style={{ marginBottom: '4px' }}>
+                            <strong>💬 現在:</strong> {summary.current_status}
+                          </div>
+                        )}
+                        {summary.next_milestone && (
+                          <div style={{ marginBottom: '4px' }}>
+                            <strong>🎯 次:</strong> {summary.next_milestone}
+                          </div>
+                        )}
+                        {summary.recent_progress && (
+                          <div style={{ color: '#0070f3' }}>
+                            <strong>✨ 最近:</strong> {summary.recent_progress}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     <p style={{ fontSize: '13px', color: '#666', marginBottom: '10px' }}>{project.description}</p>
                     <div style={{ fontSize: '12px', color: '#888' }}>
                       <div><strong>誰のため:</strong> {project.for_whom}</div>

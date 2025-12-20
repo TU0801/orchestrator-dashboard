@@ -59,10 +59,35 @@ export default function ProjectDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [taskFilter, setTaskFilter] = useState<string>('all')
+  const [claudeMd, setClaudeMd] = useState<string | null>(null)
+  const [claudeMdLoading, setClaudeMdLoading] = useState(false)
 
   useEffect(() => {
     fetchProjectDetail()
   }, [projectId])
+
+  const fetchClaudeMd = async (repositoryUrl: string) => {
+    if (!repositoryUrl) return
+
+    try {
+      setClaudeMdLoading(true)
+      // GitHubのURLをraw.githubusercontent.comに変換
+      // https://github.com/user/repo → https://raw.githubusercontent.com/user/repo/main/CLAUDE.md
+      const rawUrl = repositoryUrl
+        .replace('github.com', 'raw.githubusercontent.com')
+        .replace(/\/$/, '') + '/main/CLAUDE.md'
+
+      const response = await fetch(rawUrl)
+      if (response.ok) {
+        const text = await response.text()
+        setClaudeMd(text)
+      }
+    } catch (err) {
+      console.error('Failed to fetch CLAUDE.md:', err)
+    } finally {
+      setClaudeMdLoading(false)
+    }
+  }
 
   const fetchProjectDetail = async () => {
     try {
@@ -80,6 +105,10 @@ export default function ProjectDetailPage() {
 
       setData(result)
       setError(null)
+      // CLAUDE.mdを取得
+      if (result.project.repository_url) {
+        fetchClaudeMd(result.project.repository_url)
+      }
     } catch (err) {
       setError('Failed to connect to API')
       console.error(err)
@@ -235,6 +264,33 @@ export default function ProjectDetailPage() {
           )}
         </div>
       </div>
+
+      {/* CLAUDE.md Overview */}
+      {claudeMd && (
+        <div style={cardStyle}>
+          <h2 style={titleStyle}>📄 プロジェクト概要 (CLAUDE.md)</h2>
+          <div style={{
+            background: '#f9f9f9',
+            border: '1px solid #e0e0e0',
+            borderRadius: '6px',
+            padding: '15px',
+            fontSize: '14px',
+            maxHeight: '400px',
+            overflow: 'auto',
+            whiteSpace: 'pre-wrap',
+            fontFamily: 'monospace',
+            lineHeight: '1.6'
+          }}>
+            {claudeMd}
+          </div>
+        </div>
+      )}
+      {claudeMdLoading && (
+        <div style={cardStyle}>
+          <h2 style={titleStyle}>📄 プロジェクト概要 (CLAUDE.md)</h2>
+          <p style={{ color: '#999', fontSize: '14px' }}>読み込み中...</p>
+        </div>
+      )}
 
       {/* Git State */}
       {state && (
