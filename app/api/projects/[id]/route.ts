@@ -91,3 +91,68 @@ export async function GET(
     )
   }
 }
+
+// PUT: プロジェクト更新
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authError = requireAuth(request)
+  if (authError) return authError
+
+  try {
+    const projectId = params.id
+    const body = await request.json()
+    const { name, description, purpose, for_whom, status, priority, repository_url, deploy_url } = body
+
+    // プロジェクトの存在確認
+    const { data: existing } = await supabase
+      .from('orch_projects')
+      .select('id')
+      .eq('id', projectId)
+      .maybeSingle()
+
+    if (!existing) {
+      return NextResponse.json(
+        { error: 'Project not found' },
+        { status: 404 }
+      )
+    }
+
+    // プロジェクト更新
+    const { data, error } = await supabase
+      .from('orch_projects')
+      .update({
+        name,
+        description,
+        purpose,
+        for_whom,
+        status,
+        priority,
+        repository_url,
+        deploy_url
+      })
+      .eq('id', projectId)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Project update error:', error)
+      return NextResponse.json(
+        { error: 'Failed to update project' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      project: data
+    })
+  } catch (error) {
+    console.error('Unexpected error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
