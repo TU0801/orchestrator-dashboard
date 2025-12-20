@@ -273,7 +273,7 @@ export default function Dashboard() {
           Orchestrator Dashboard
         </h1>
         <button
-          onClick={fetchStatus}
+          onClick={() => fetchStatus()}
           disabled={loading}
           style={{
             padding: '10px 20px',
