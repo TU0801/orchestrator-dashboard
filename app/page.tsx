@@ -102,6 +102,11 @@ export default function Dashboard() {
   const [customDescription, setCustomDescription] = useState<string>('')
   const [addingCustom, setAddingCustom] = useState(false)
 
+  // 実行中タスク用のstate
+  const [runningTasks, setRunningTasks] = useState<any[]>([])
+  const [maxConcurrent, setMaxConcurrent] = useState(3)
+  const [queueCount, setQueueCount] = useState(0)
+
   const fetchStatus = async (silent = false) => {
     if (!silent) setLoading(true)
     try {
@@ -125,6 +130,23 @@ export default function Dashboard() {
       }
     } finally {
       if (!silent) setLoading(false)
+    }
+  }
+
+  const fetchRunningTasks = async () => {
+    try {
+      const params = new URLSearchParams(window.location.search)
+      const key = params.get('key') || ''
+      const response = await fetch(`/api/running-tasks?key=${key}`)
+      const data = await response.json()
+
+      if (response.ok) {
+        setRunningTasks(data.running || [])
+        setMaxConcurrent(data.max_concurrent || 3)
+        setQueueCount(data.queue_count || 0)
+      }
+    } catch (err) {
+      console.error('Failed to fetch running tasks:', err)
     }
   }
 
@@ -228,10 +250,12 @@ export default function Dashboard() {
   useEffect(() => {
     fetchStatus()
     fetchSuggestions()
+    fetchRunningTasks()
     // 15秒ごとにタスク一覧と提案を自動更新（サイレントモード）
     const interval = setInterval(() => {
       fetchStatus(true)
       fetchSuggestions()
+      fetchRunningTasks()
     }, 15000)
     return () => clearInterval(interval)
   }, [])
@@ -382,6 +406,69 @@ export default function Dashboard() {
           </button>
         </div>
       </div>
+
+      {/* 実行中タスクセクション */}
+      {runningTasks.length > 0 && (
+        <div style={cardStyle}>
+          <h2 style={{ marginTop: 0, fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>
+            🔄 実行中 ({runningTasks.length}/{maxConcurrent})
+          </h2>
+          {runningTasks.map((run: any) => (
+            <div key={run.id} style={{
+              background: '#f9f9f9',
+              border: '1px solid #e0e0e0',
+              borderRadius: '6px',
+              padding: '12px',
+              marginBottom: '12px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '8px' }}>
+                <div>
+                  <strong>{run.orch_projects?.name || run.project_id}</strong>
+                  <span style={{ marginLeft: '10px', fontSize: '13px', color: '#666' }}>
+                    ({run.duration_display})
+                  </span>
+                </div>
+                <span style={{
+                  background: '#28a745',
+                  color: 'white',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  fontSize: '12px'
+                }}>
+                  Running
+                </span>
+              </div>
+              <div style={{ fontSize: '14px', color: '#555', marginBottom: '8px' }}>
+                {run.instruction}
+              </div>
+              {run.current_progress && run.current_progress.tasks && (
+                <div style={{ fontSize: '13px' }}>
+                  {run.current_progress.tasks.map((task: any, idx: number) => (
+                    <div key={idx} style={{ marginBottom: '4px' }}>
+                      {task.completed ? '☑' : '☐'} {task.content}
+                    </div>
+                  ))}
+                  <div style={{ marginTop: '8px', color: '#666', fontSize: '12px' }}>
+                    進捗: {run.current_progress.completed}/{run.current_progress.total} ({Math.round(run.current_progress.completed / run.current_progress.total * 100)}%)
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+          {queueCount > 0 && (
+            <div style={{
+              background: '#fff8e1',
+              border: '1px solid #ffc107',
+              borderRadius: '6px',
+              padding: '10px',
+              fontSize: '13px',
+              color: '#856404'
+            }}>
+              ⏳ キューに {queueCount} 件のタスクが待機中
+            </div>
+          )}
+        </div>
+      )}
 
       {error && (
         <div style={{
