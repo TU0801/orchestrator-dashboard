@@ -165,6 +165,52 @@ export default function Dashboard() {
     }
   }
 
+  const deleteTask = async (taskId: number) => {
+    if (!confirm('このタスクを削除しますか？')) {
+      return
+    }
+
+    try {
+      const params = new URLSearchParams(window.location.search)
+      const key = params.get('key') || ''
+      const response = await fetch(`/api/tasks/${taskId}?key=${key}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        fetchStatus()
+      } else {
+        alert('タスクの削除に失敗しました')
+      }
+    } catch (err) {
+      console.error('Failed to delete task:', err)
+      alert('タスクの削除に失敗しました')
+    }
+  }
+
+  const deleteSuggestion = async (suggestionId: number) => {
+    if (!confirm('この提案を削除しますか？')) {
+      return
+    }
+
+    try {
+      const params = new URLSearchParams(window.location.search)
+      const key = params.get('key') || ''
+      const response = await fetch(`/api/suggestions/${suggestionId}?key=${key}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        fetchSuggestions()
+      } else {
+        alert('提案の削除に失敗しました')
+      }
+    } catch (err) {
+      console.error('Failed to delete suggestion:', err)
+      alert('提案の削除に失敗しました')
+    }
+  }
+
   const addCustomSuggestion = async () => {
     if (!customProject || !customTitle.trim()) {
       return
@@ -678,6 +724,25 @@ export default function Dashboard() {
                                   {new Date(suggestion.created_at).toLocaleString()}
                                 </div>
                               </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  deleteSuggestion(suggestion.id)
+                                }}
+                                style={{
+                                  padding: '4px 8px',
+                                  background: '#dc3545',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '4px',
+                                  fontSize: '12px',
+                                  cursor: 'pointer',
+                                  alignSelf: 'flex-start'
+                                }}
+                                title="提案を削除"
+                              >
+                                🗑️
+                              </button>
                             </div>
                           ))}
                         </div>
@@ -883,22 +948,40 @@ export default function Dashboard() {
                           {task.completed_at && ` • Completed: ${new Date(task.completed_at).toLocaleString()}`}
                         </div>
                       </div>
-                      <div style={{
-                        padding: '4px 12px',
-                        background:
-                          task.status === 'done' ? '#d4edda' :
-                          task.status === 'failed' ? '#f8d7da' :
-                          task.status === 'in_progress' ? '#fff3cd' : '#e7f3ff',
-                        color:
-                          task.status === 'done' ? '#155724' :
-                          task.status === 'failed' ? '#721c24' :
-                          task.status === 'in_progress' ? '#856404' : '#004085',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        fontWeight: '500',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        {task.status}
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <div style={{
+                          padding: '4px 12px',
+                          background:
+                            task.status === 'done' ? '#d4edda' :
+                            task.status === 'failed' ? '#f8d7da' :
+                            task.status === 'in_progress' ? '#fff3cd' : '#e7f3ff',
+                          color:
+                            task.status === 'done' ? '#155724' :
+                            task.status === 'failed' ? '#721c24' :
+                            task.status === 'in_progress' ? '#856404' : '#004085',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                          fontWeight: '500',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {task.status}
+                        </div>
+                        <button
+                          onClick={() => deleteTask(task.id)}
+                          style={{
+                            padding: '4px 8px',
+                            background: '#dc3545',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            cursor: 'pointer',
+                            whiteSpace: 'nowrap'
+                          }}
+                          title="タスクを削除"
+                        >
+                          🗑️
+                        </button>
                       </div>
                     </div>
 
