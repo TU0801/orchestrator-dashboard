@@ -11,6 +11,18 @@ interface UserProfile {
   updated_at: string
 }
 
+interface Project {
+  id: string
+  name: string
+  description: string
+  purpose: string
+  for_whom: string
+  status: string
+  priority: number
+  repository_url: string
+  deploy_url: string
+}
+
 export default function SettingsPage() {
   const router = useRouter()
   const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -24,8 +36,16 @@ export default function SettingsPage() {
   const [currentChallenges, setCurrentChallenges] = useState<string[]>([''])
   const [currentGoals, setCurrentGoals] = useState<string[]>([''])
 
+  // プロジェクト編集用の状態
+  const [projects, setProjects] = useState<Project[]>([])
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+  const [projectLoading, setProjectLoading] = useState(false)
+  const [projectSaving, setProjectSaving] = useState(false)
+  const [projectSuccess, setProjectSuccess] = useState(false)
+
   useEffect(() => {
     fetchProfile()
+    fetchProjects()
   }, [])
 
   const fetchProfile = async () => {
@@ -85,6 +105,65 @@ export default function SettingsPage() {
       console.error(err)
     } finally {
       setSaving(false)
+    }
+  }
+
+  const fetchProjects = async () => {
+    try {
+      setProjectLoading(true)
+      const params = new URLSearchParams(window.location.search)
+      const key = params.get('key') || ''
+      const response = await fetch(`/api/status?key=${key}`)
+      const data = await response.json()
+
+      if (response.ok && data.projects) {
+        setProjects(data.projects)
+      }
+    } catch (err) {
+      console.error('Failed to fetch projects:', err)
+    } finally {
+      setProjectLoading(false)
+    }
+  }
+
+  const handleProjectSave = async () => {
+    if (!selectedProject) return
+
+    try {
+      setProjectSaving(true)
+      setProjectSuccess(false)
+
+      const params = new URLSearchParams(window.location.search)
+      const key = params.get('key') || ''
+
+      const response = await fetch(`/api/projects/${selectedProject.id}?key=${key}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: selectedProject.name,
+          description: selectedProject.description,
+          purpose: selectedProject.purpose,
+          for_whom: selectedProject.for_whom,
+          status: selectedProject.status,
+          priority: selectedProject.priority,
+          repository_url: selectedProject.repository_url,
+          deploy_url: selectedProject.deploy_url
+        })
+      })
+
+      if (!response.ok) {
+        alert('プロジェクトの更新に失敗しました')
+        return
+      }
+
+      setProjectSuccess(true)
+      fetchProjects()
+      setTimeout(() => setProjectSuccess(false), 3000)
+    } catch (err) {
+      console.error('Failed to update project:', err)
+      alert('プロジェクトの更新に失敗しました')
+    } finally {
+      setProjectSaving(false)
     }
   }
 
@@ -318,6 +397,185 @@ export default function SettingsPage() {
         >
           {saving ? 'Saving...' : 'Save Profile'}
         </button>
+      </div>
+
+      {/* プロジェクト編集セクション */}
+      <div style={{
+        background: 'white',
+        padding: '24px',
+        borderRadius: '8px',
+        border: '1px solid #e0e0e0'
+      }}>
+        <h2 style={{ marginTop: 0, marginBottom: '20px', fontSize: '20px', fontWeight: 'bold' }}>
+          📂 プロジェクト編集
+        </h2>
+
+        {projectLoading ? (
+          <div>Loading projects...</div>
+        ) : (
+          <>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px' }}>
+                編集するプロジェクトを選択
+              </label>
+              <select
+                value={selectedProject?.id || ''}
+                onChange={(e) => {
+                  const project = projects.find(p => p.id === e.target.value)
+                  setSelectedProject(project || null)
+                  setProjectSuccess(false)
+                }}
+                style={inputStyle}
+              >
+                <option value="">-- プロジェクトを選択 --</option>
+                {projects.map(project => (
+                  <option key={project.id} value={project.id}>
+                    {project.name} ({project.id})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {selectedProject && (
+              <>
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px' }}>
+                    プロジェクト名 *
+                  </label>
+                  <input
+                    type="text"
+                    value={selectedProject.name}
+                    onChange={(e) => setSelectedProject({ ...selectedProject, name: e.target.value })}
+                    style={inputStyle}
+                  />
+                </div>
+
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px' }}>
+                    説明
+                  </label>
+                  <textarea
+                    value={selectedProject.description}
+                    onChange={(e) => setSelectedProject({ ...selectedProject, description: e.target.value })}
+                    style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' as const }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px' }}>
+                    目的
+                  </label>
+                  <input
+                    type="text"
+                    value={selectedProject.purpose}
+                    onChange={(e) => setSelectedProject({ ...selectedProject, purpose: e.target.value })}
+                    style={inputStyle}
+                  />
+                </div>
+
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px' }}>
+                    対象ユーザー
+                  </label>
+                  <input
+                    type="text"
+                    value={selectedProject.for_whom}
+                    onChange={(e) => setSelectedProject({ ...selectedProject, for_whom: e.target.value })}
+                    style={inputStyle}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px' }}>
+                      ステータス
+                    </label>
+                    <select
+                      value={selectedProject.status}
+                      onChange={(e) => setSelectedProject({ ...selectedProject, status: e.target.value })}
+                      style={inputStyle}
+                    >
+                      <option value="active">Active</option>
+                      <option value="paused">Paused</option>
+                      <option value="completed">Completed</option>
+                      <option value="archived">Archived</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px' }}>
+                      優先度
+                    </label>
+                    <select
+                      value={selectedProject.priority}
+                      onChange={(e) => setSelectedProject({ ...selectedProject, priority: parseInt(e.target.value) })}
+                      style={inputStyle}
+                    >
+                      <option value="1">1 - 最高</option>
+                      <option value="2">2 - 高</option>
+                      <option value="3">3 - 中</option>
+                      <option value="4">4 - 低</option>
+                      <option value="5">5 - 最低</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px' }}>
+                    Repository URL
+                  </label>
+                  <input
+                    type="url"
+                    value={selectedProject.repository_url}
+                    onChange={(e) => setSelectedProject({ ...selectedProject, repository_url: e.target.value })}
+                    placeholder="https://github.com/..."
+                    style={inputStyle}
+                  />
+                </div>
+
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px' }}>
+                    Deploy URL
+                  </label>
+                  <input
+                    type="url"
+                    value={selectedProject.deploy_url}
+                    onChange={(e) => setSelectedProject({ ...selectedProject, deploy_url: e.target.value })}
+                    placeholder="https://..."
+                    style={inputStyle}
+                  />
+                </div>
+
+                {projectSuccess && (
+                  <div style={{
+                    padding: '12px',
+                    background: '#d4edda',
+                    border: '1px solid #c3e6cb',
+                    borderRadius: '4px',
+                    color: '#155724',
+                    marginBottom: '15px',
+                    fontSize: '14px'
+                  }}>
+                    ✓ プロジェクトを更新しました
+                  </div>
+                )}
+
+                <button
+                  onClick={handleProjectSave}
+                  disabled={projectSaving || !selectedProject.name.trim()}
+                  style={{
+                    ...buttonStyle,
+                    background: projectSaving || !selectedProject.name.trim() ? '#ccc' : '#28a745',
+                    color: 'white',
+                    width: '100%'
+                  }}
+                >
+                  {projectSaving ? '保存中...' : 'プロジェクトを更新'}
+                </button>
+              </>
+            )}
+          </>
+        )}
       </div>
     </div>
   )
